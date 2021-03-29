@@ -1,0 +1,25 @@
+{
+  "name": "givbacks-scripts",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:Giveth/givbacks-scripts.git",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "npm run build && node index.js",
+    "build": "babel ./src --out-dir lib --extensions '.ts,.tsx'"
+  },
+  "dependencies": {
+    "isomorphic-fetch": "^3.0.0",
+    "regenerator-runtime": "^0.13.7",
+    "typescript": "^4.2.3",
+    "yargs": "^16.2.0"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.10.5",
+    "@babel/core": "^7.11.1",
+    "@babel/plugin-proposal-class-properties": "^7.12.1",
+    "@babel/preset-env": "^7.11.0",
+    "@babel/preset-typescript": "^7.10.4",
+    "babel-polyfill": "^6.26.0"
+  }
+}
