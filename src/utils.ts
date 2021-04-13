@@ -1,8 +1,18 @@
-const fetch = require('isomorphic-fetch');
+import fetch from 'isomorphic-fetch';
+import BigNumber from 'bignumber.js';
 
 const COINGECKO_API_URL = 'https://api.coingecko.com/api/v3';
 
 const GIVETH_API_URL = 'https://mainnet.serve.giveth.io/graphql';
+
+BigNumber.config({
+  DECIMAL_PLACES: 18,
+  ROUNDING_MODE: BigNumber.ROUND_DOWN,
+});
+
+export function bnum(val) {
+  return new BigNumber(val.toString());
+}
 
 export async function fetchDonations() {
 
@@ -11,6 +21,7 @@ export async function fetchDonations() {
       donations {
         amount
         valueUsd  
+        createdAt
         project {
           id
         }

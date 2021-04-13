@@ -9,6 +9,8 @@
     "build": "babel ./src --out-dir lib --extensions '.ts,.tsx'"
   },
   "dependencies": {
+    "bignumber.js": "^9.0.1",
+    "fs": "^0.0.1-security",
     "isomorphic-fetch": "^3.0.0",
     "regenerator-runtime": "^0.13.7",
     "typescript": "^4.2.3",

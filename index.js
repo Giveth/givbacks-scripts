@@ -1,47 +1,75 @@
 require('regenerator-runtime/runtime');
 
 const { argv } = require('yargs');
+const { mkdirSync, writeFileSync } = require('fs');
 
 const verifiedProjects = require('./lib/projects.json');
 
-const { fetchDonations, fetchTokenPrice } = require('./lib/utils');
+const { bnum, fetchDonations } = require('./lib/utils');
 
-if (!argv.round || !argv.startTime || !argv.endTime) {
+if (!argv.round || !argv.givAvailable || !argv.givPrice || !argv.startTime || !argv.endTime) {
   console.log(
-      'Usage: node index.js --round 1 --startTime TBU --endTime TBU'
+      'Usage: node index.js --round 1 --givAvailable 10000 --givPrice 10 --startTime 2021-04-01T10:00:00Z --endTime 2021-04-08T12:00:00Z'
   );
   process.exit();
 }
 
 // Round params
 const ROUND = argv.round;
-const END_TIME = argv.endTime; 
-const START_TIME = argv.startTime;
+const END_TIME = new Date(argv.endTime); 
+const START_TIME = new Date(argv.startTime);
 
 // Distribution params
-const GIVBACKS_AVAILABLE = 10000;
 const GIVBACKS_MAX_FACTOR = 0.75;
-const GIVBACK_ADDRESS  = '0x6B175474E89094C44Da98b954EedeAC495271d0F'; // TBU
+const GIVBACKS_PRICE  = argv.givbacksPrice;
+const GIVBACKS_AVAILABLE = bnum(argv.givAvailable);
 
 (async function () {
-
   const { donations } = await fetchDonations();
 
-  function isEligibleDonation(donation) {
-    return verifiedProjects.includes(donation.project.id)
-  }
+  function isEligibleDonation({ createdAt }) {
+    return new Date(createdAt) >= START_TIME && new Date(createdAt) < END_TIME;
+  };
 
-  const eligibleDonations = donations.filter(isEligibleDonation)
+  const eligibleDonations = donations.filter(isEligibleDonation);
 
-  const amountDonated = eligibleDonations.reduce((accumulator, { valueUsd }) => accumulator + valueUsd, 0);
+  const donationsFormatted = eligibleDonations.map(donation => ({ 
+    walletAddress: donation.user.walletAddress, 
+    valueUsd: donation.valueUsd * GIVBACKS_MAX_FACTOR
+  }));
 
-  const amountDonatedCapped = amountDonated * GIVBACKS_MAX_FACTOR;
+  const donationsGrouped = [];
 
-  const givbackPrice = fetchTokenPrice(GIVBACK_ADDRESS, END_TIME);
+  donationsFormatted.reduce((res, value) => {
+    if (!res[value.walletAddress]) {
+      res[value.walletAddress] = { walletAddress: value.walletAddress, valueUsd: 0 };
+      donationsGrouped.push(res[value.walletAddress])
+    }
+    res[value.walletAddress].valueUsd += value.valueUsd;
+    return res;
+  }, {});
 
-  const givbacksToDistribute = amountDonatedCapped / givbackPrice;
+  const totalDonated = donationsGrouped.reduce((accumulator, { valueUsd }) => accumulator + valueUsd, 0);
 
-  const givbacksToDistributeCapped = givbacksToDistribute >= GIVBACKS_AVAILABLE ? GIVBACKS_AVAILABLE : givbacksToDistribute;
+  const cappedAmountDonated = totalDonated * GIVBACKS_MAX_FACTOR;
+
+  const givbacksToDistribute = bnum(cappedAmountDonated / GIVBACKS_PRICE);
+
+  const cappedGivbacksToDistribute = givbacksToDistribute.dp(18).gte(GIVBACKS_AVAILABLE.dp(18)) ? GIVBACKS_AVAILABLE : givbacksToDistribute;
+
+  const giversRewards = donationsGrouped.map(donation => ({
+    [donation.walletAddress]: cappedGivbacksToDistribute.times(donation.valueUsd).div(totalDonated)
+  }));
+
+  try {
+    mkdirSync(`./reports/${ROUND}/`);
+    writeFileSync(
+        `./reports/${ROUND}/rewards.json`,
+        JSON.stringify(giversRewards, null, 4)
+    );
+  } catch (err) {
+      console.error(err);
+  };
 
   return;
 })();
