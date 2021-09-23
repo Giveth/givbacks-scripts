@@ -1,6 +1,6 @@
 # GIVback Scripts
 
-This repository contains the scripts required to calculate GIVback rewards.
+This repository contains the scripts required to calculate the GIVback rewards.
 
 ## Requirements
 
