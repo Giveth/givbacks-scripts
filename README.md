@@ -19,6 +19,6 @@ poetry shell && poetry install
 ## Running scripts
 
 1. Start Jupyter Notebook by running `jupyter notebook`
-2. Open the `givback.ipynb` notebook
+2. Open the `givbacks-scripts.ipynb` notebook
 3. Run all cells
 
